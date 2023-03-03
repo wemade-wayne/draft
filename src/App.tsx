@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import logo from './logo.svg';
 import './App.css';
 import { Editor } from "react-draft-wysiwyg";
 import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import { EditorState, convertToRaw } from "draft-js";
 import draftToHtml from "draftjs-to-html";
 import ReactHtmlParser from 'react-html-parser';
-import createImagePlugin from '@draft-js-plugins/image';
 
 function App(this: any) {
   const [editorState, setEditorState] = useState(EditorState.createEmpty());
