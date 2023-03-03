@@ -5,23 +5,31 @@ import { Editor } from "react-draft-wysiwyg";
 import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import { EditorState, convertToRaw } from "draft-js";
 import draftToHtml from "draftjs-to-html";
+import ReactHtmlParser from 'react-html-parser';
+import createImagePlugin from '@draft-js-plugins/image';
 
 function App(this: any) {
   const [editorState, setEditorState] = useState(EditorState.createEmpty());
+  const [dom, setDom] = useState(null);
+
+  const parser = new DOMParser();
 
   const onEditorStateChange = (editorState: EditorState) => {
     // editorState에 값 설정
     setEditorState(editorState);
   };
 
+  const imagePlugin = createImagePlugin();
+
   const editorToHtml = draftToHtml(
     convertToRaw(editorState.getCurrentContent())
   );
 
-  const uploadImageCallBack = (file: string | Blob, callback: any) => {
-    console.log(file);
+  const uploadImageCallBack = (file: any) => {
+    console.log("aaaa");
     return new Promise((resolve, reject) => {
-      resolve("aaaa")
+      console.log("bbbb");
+      resolve({ data: { link: "https://search.pstatic.net/sunny/?src=https%3A%2F%2Fthumb2.gettyimageskorea.com%2Fimage_preview%2F700%2F202301%2FFPL%2F1455340739.jpg&type=sc960_832" } });
     });
   };
 
@@ -30,6 +38,13 @@ function App(this: any) {
     try {
       // editorToHtml 
       console.log("editorToHtml: ", editorToHtml)
+
+      // make a new parser
+      // const parser = new DOMParser();
+
+      // const rootElement = document.getElementById("root");
+      // const element = React.createElement("h1", {children : editorToHtml});
+      // ReactDOM.render(editorToHtml, rootElement);
     } catch (e) {
       console.log(e);
     }
@@ -46,6 +61,7 @@ function App(this: any) {
             editorClassName="editor"
             // 툴바 주위에 적용된 클래스
             toolbarClassName="toolbar"
+
             // 툴바 설정
             toolbar={{
               // inDropdown: 해당 항목과 관련된 항목을 드롭다운으로 나타낼것인지
@@ -75,6 +91,9 @@ function App(this: any) {
           등록
         </button>
         <button className="notice__button">취소</button>
+      </div>
+      <div>
+        {ReactHtmlParser(editorToHtml)}
       </div>
     </div>
   );
