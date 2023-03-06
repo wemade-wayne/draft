@@ -28,6 +28,25 @@
   color: #61dafb;
 }
 
+.editor {
+  width: 90%;
+  border: solid 1px gray;
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.badge-upload-file {
+  position: absolute;
+  margin: 1px;
+  bottom: 0px;
+  border: 3px solid blue;
+  
+}
+
+li {
+  margin: 0;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
