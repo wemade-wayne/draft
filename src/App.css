@@ -36,15 +36,16 @@
 }
 
 .badge-upload-file {
-  position: absolute;
   margin: 1px;
   bottom: 0px;
   border: 3px solid blue;
+  background-color: yellow;
   
 }
 
 li {
-  margin: 0;
+  list-style: none;
+  margin: 10px;
 }
 
 @keyframes App-logo-spin {

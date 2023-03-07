@@ -1,9 +1,8 @@
-import React, {useState, useRef, ReactNode, useEffect} from 'react';
+import React, {useState, useRef} from 'react';
 import './App.css';
 import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import type {
   ContentBlock,
-  ContentState,
   SelectionState,
   DraftHandleValue,
 } from 'draft-js';
@@ -18,14 +17,10 @@ import {
 import draftToHtml from "draftjs-to-html";
 import ReactHtmlParser from 'react-html-parser';
 
-type BlockComponentProps = {
-  contentState: ContentState;
-  block: ContentBlock;
-};
-
 type FileObject = {
   url: string;
   type: string;
+  name: string;
 }
 
 function App(this : any) {
@@ -33,7 +28,6 @@ function App(this : any) {
     const [isUploading, setIsUploading] = React.useState(false);
     const fileObjects = useRef([] as FileObject[]);
     const editorRef = React.useRef<Editor>(null);
-    const dropedFileNameRef = useRef("");
 
     const customStyleMap = {
       '16px': { fontSize: 16 },
@@ -55,25 +49,7 @@ function App(this : any) {
       }
     };
 
-    const onEditorStateChange = (editorState : EditorState) => {
-        // editorState에 값 설정
-        setEditorState(editorState);
-    };
-
     const editorToHtml = draftToHtml(convertToRaw(editorState.getCurrentContent()));
-
-    const uploadImageCallBack = (file: File) => {
-        console.log("aaaa");
-
-        return new Promise((resolve, reject) => {
-            console.log("bbbb:", URL.createObjectURL(file));
-            resolve({
-                data: {
-                    link: URL.createObjectURL(file)
-                }
-            });
-        });
-    };
 
     const onClickHandler = (e : any) => {
         e.preventDefault();
@@ -81,31 +57,6 @@ function App(this : any) {
             console.log("editorToHtml: ", editorToHtml)
         } catch (e) {
             console.log(e);
-        }
-    };
-
-    const handleEditorDrop = async (e : any) => {
-        e.preventDefault();
-        if (e.dataTransfer.files.length > 0) {
-            const file = e
-                .dataTransfer
-                .files[0];
-            if (file.type.startsWith('pdf')) {
-                const newFile: any = await uploadImageCallBack(file);
-                const entityData = {
-                    src: newFile.data.link
-                };
-                const entityKey = editorState
-                    .getCurrentContent()
-                    .createEntity('FILE', 'MUTABLE', entityData)
-                    .getLastCreatedEntityKey();
-                const newEditorState = AtomicBlockUtils.insertAtomicBlock(
-                    editorState,
-                    entityKey,
-                    ' '
-                );
-                setEditorState(newEditorState);
-            }
         }
     };
 
@@ -118,6 +69,17 @@ function App(this : any) {
         return "not-handled";
     };
 
+    const setFileObjects = (files: File[]) => {
+        files.map(file => {
+            let fileObj: FileObject = {
+                url: URL.createObjectURL(file),
+                type: file.type,
+                name: file.name
+            };
+            return fileObjects.current.push(fileObj);
+        });
+    }
+
     const handleDroppedFiles = (
       selection: SelectionState,
       files: File[]
@@ -125,24 +87,17 @@ function App(this : any) {
       
       //API 통신
       
-      files.map(file => {
-        let fileObj: FileObject = {
-            url: URL.createObjectURL(file),
-            type: file.type
-        };
-        fileObjects.current.push(fileObj);
-      });
+      setFileObjects(files);
 
-      insertImage(fileObjects.current);
+      insertImage();
       return 'handled';
     };
   
-    const insertImage = React.useCallback((fileObjects: FileObject[]) => {
-      console.log("wwee: ", fileObjects);
+    const insertImage = React.useCallback(() => {
 
       let nextEditorState: EditorState = EditorState.createEmpty();
 
-      fileObjects.map(fileObj => {
+      fileObjects.current.map(fileObj => {
         const contentState = editorState.getCurrentContent();
         const contentStateWithEntity = contentState.createEntity(
           fileObj.type,
@@ -158,44 +113,61 @@ function App(this : any) {
           entityKey,
           ' '
         );
+        return nextEditorState;
       });
 
       setEditorState(nextEditorState);
     }, [editorState]);
   
-    /** 画像の表示 */
-    const Media = (props: BlockComponentProps) => {
-      console.log("kny: ", fileObjects.current);
-      const entityKey = props.block.getEntityAt(0);
-      if (!entityKey) return null;
-      const entity = props.contentState.getEntity(entityKey);
-      console.log("entity:", entity);
-      const { url } = entity.getData();
-      console.log("entityurl:", url);
-      const type = entity.getType();
-      console.log("ty: ", type);
-      let media;
-      if (type === 'image') {
-        media = <img src={url} alt="" className="image" />;
-      } else if (type === 'mp4') {
-        media = <video controls width={250}>
-          <source src={url} type="video/webm"></source>
-        </video>
-      } else {
-        //console.log("ffi:", fileList.current);
+    const Media = () => {
+        let media: JSX.Element[] = [];
+        fileObjects
+            .current
+            .map((fileObj, index) => {
+                let element;
+                if (fileObj.type === "image/png") {
+                    element =
+                            <div key={index}>
+                                <img src = {
+                                fileObj.url
+                                }
+                                alt = ""
+                                className = "image"
+                                width={200}
+                                height={200}/>
+                            </div>;
+                }
+                else if (fileObj.type === "video/mp4") {
+                    element =
+                            <div key={index}>
+                                <video controls width = {250}>
+                                    <source src = {fileObj.url} type = "video/webm" ></source>
+                                </video>;
+                            </div>
+                }
+                return media.push(element ? element: <></>);
+            });
         
-
-        let files: string[] = [];
-        files = [...files, dropedFileNameRef.current];
+        const otherFiles = fileObjects
+            .current
+            .filter(fileObj => 
+                fileObj.type !== "image/png" && fileObj.type !== "video/mp4");
         
-        media = <ul>
-          {files.map((file, index) => (
-          <li key={index}>{file}</li>
-        ))}
-        </ul>
-      }
-      return media;
-    };
+        media.push(
+            <ul>
+                {
+                    otherFiles.map((fileObj, index) =>
+                        <li key={index}>
+                            <label className='badge-upload-file'>
+                                {fileObj.name}
+                            </label>
+                        </li>
+                    )
+                }
+            </ul>
+        );
+        return media;
+    }
   
     const blockRenderer = (block: ContentBlock) => {
       if (block.getType() === 'atomic') {
@@ -217,17 +189,16 @@ function App(this : any) {
 
           if (!(e.target instanceof HTMLInputElement)) return;
 
-          
-          let fileList: FileList;
-          let fileObj: File;
-
+          let files: File[] = [];
           if (e.target.files) {
-            fileList = e.target.files;
-            fileObj = fileList[0];
+            for (let i = 0; i < e.target.files.length; i++) {
+                files.push(e.target.files[i]);
+            }
           }
 
-          // 画像情報をinsertImageの関数に渡し、画像アップロードを行う
-          //await insertImage(fileObj);
+          setFileObjects(files);
+
+          await insertImage();
         } finally {
           setIsUploading(false);
           e.target.value = '';
@@ -238,20 +209,16 @@ function App(this : any) {
 
     return (
         <div className="App">
-
-              <label className="button">
-                <div>
-                  파일 업로드
-                </div>
+            <h2 className="notice__title">내용</h2>
+            <label className="button">
                 <input
-                  className="input"
-                  type="file"
-                  accept="image/*"
-                  onChange={uploadImage}
-                  disabled={isUploading}
+                    className="input"
+                    type="file"
+                    onChange={uploadImage}
+                    disabled={isUploading}
+                    multiple
                 />
             </label>
-            <h2 className="notice__title">내용</h2>
             <div className="editor" onClick={() => editorRef.current?.focus()}>
             <Editor
                 placeholder="Enter..."
