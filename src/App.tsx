@@ -139,45 +139,39 @@ function App(this : any) {
   
     const insertImage = React.useCallback((fileObjects: FileObject[]) => {
       console.log("wwee: ", fileObjects);
-      let type = "";
 
-      if (files[0].name.includes("png")) {
-        type = "image";
-      } else if (files[0].name.includes("mp4")) {
-        type = "mp4";
-      } else {
-        dropedFileNameRef.current = files[0].name;
-        type = "pdf";
-      }
+      let nextEditorState: EditorState = EditorState.createEmpty();
 
       fileObjects.map(fileObj => {
-        
+        const contentState = editorState.getCurrentContent();
+        const contentStateWithEntity = contentState.createEntity(
+          fileObj.type,
+          'MUTABLE',
+          { url: fileObj.url }
+        );
+        const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+        nextEditorState = EditorState.set(editorState, {
+          currentContent: contentStateWithEntity,
+        });
+        nextEditorState = AtomicBlockUtils.insertAtomicBlock(
+          nextEditorState,
+          entityKey,
+          ' '
+        );
       });
 
-      const contentState = editorState.getCurrentContent();
-      const contentStateWithEntity = contentState.createEntity(
-        type,
-        'MUTABLE',
-        { url: URL.createObjectURL(files[0]) }
-      );
-      const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
-      let nextEditorState = EditorState.set(editorState, {
-        currentContent: contentStateWithEntity,
-      });
-      nextEditorState = AtomicBlockUtils.insertAtomicBlock(
-        nextEditorState,
-        entityKey,
-        ' '
-      );
       setEditorState(nextEditorState);
     }, [editorState]);
   
     /** 画像の表示 */
     const Media = (props: BlockComponentProps) => {
+      console.log("kny: ", fileObjects.current);
       const entityKey = props.block.getEntityAt(0);
       if (!entityKey) return null;
       const entity = props.contentState.getEntity(entityKey);
+      console.log("entity:", entity);
       const { url } = entity.getData();
+      console.log("entityurl:", url);
       const type = entity.getType();
       console.log("ty: ", type);
       let media;
@@ -203,7 +197,6 @@ function App(this : any) {
       return media;
     };
   
-    /** レンダラー */
     const blockRenderer = (block: ContentBlock) => {
       if (block.getType() === 'atomic') {
         return {
