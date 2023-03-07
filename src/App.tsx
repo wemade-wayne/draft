@@ -118,7 +118,7 @@ function App(this : any) {
 
       setEditorState(nextEditorState);
     }, [editorState]);
-  
+    //
     const Media = () => {
         let media: JSX.Element[] = [];
         fileObjects
