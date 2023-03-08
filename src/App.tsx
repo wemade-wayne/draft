@@ -142,7 +142,7 @@ function App(this : any) {
                             <div key={index}>
                                 <video controls width = {250}>
                                     <source src = {fileObj.url} type = "video/webm" ></source>
-                                </video>;
+                                </video>
                             </div>
                 }
                 return media.push(element ? element: <></>);
@@ -210,7 +210,9 @@ function App(this : any) {
     return (
         <div className="App">
             <h2 className="notice__title">내용</h2>
+            <div className='list'>
             <label className="button">
+                <div>이미지</div>
                 <input
                     className="input"
                     type="file"
@@ -219,6 +221,7 @@ function App(this : any) {
                     multiple
                 />
             </label>
+            </div>
             <div className="editor" onClick={() => editorRef.current?.focus()}>
             <Editor
                 placeholder="Enter..."
